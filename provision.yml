@@ -25,3 +25,35 @@
       template:
         src: index.html.j2
         dest: /var/www/html/index.html
+
+- name: configure a loadbalancer
+  hosts: loadbalancer
+  become: true
+  tasks:
+    - name: uninstall httpd if present
+      yum:
+        name: httpd
+        state: absent
+
+    - name: install haproxy
+      yum:
+        name: haproxy
+        state: present
+
+    - name: allow port 5000/tcp in the firewall
+      firewalld:
+        port: 5000/tcp
+        permanent: true
+        immediate: true
+        state: enabled
+
+    - name: deploy haproxy.cfg from haproxy.cfg.j2
+      template:
+        src: haproxy.cfg.j2
+        dest: /etc/haproxy/haproxy.cfg
+
+    - name: restart haproxy service
+      service:
+        name: haproxy
+        state: restarted
+        enabled: true
